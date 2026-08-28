@@ -1,0 +1,31 @@
+[project]
+name = "cognitive-orchestrator"
+version = "0.1.0"
+description = "Agentic cognitive loop for a tabletop robot: VLM perception -> planning -> skill orchestration -> verification, with bounded replanning."
+requires-python = ">=3.10"
+dependencies = [
+  "langgraph>=0.2",
+  "openai>=1.40",
+  "httpx>=0.27",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "fastapi>=0.111",
+  "uvicorn[standard]>=0.30",
+  "pillow>=10.0",
+  "numpy>=1.26",
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+sim = ["pybullet>=3.2"]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

@@ -1,0 +1,11 @@
+# Edge component: the skill-service that conceptually runs ON the robot.
+# Tiny image, no GPU, no model weights -- just low-latency actuation behind an API.
+FROM python:3.11-slim
+WORKDIR /app
+RUN pip install --no-cache-dir "fastapi>=0.111" "uvicorn[standard]>=0.30" "pydantic>=2.7"
+COPY src/cognitive_orchestrator/schemas.py            src/cognitive_orchestrator/schemas.py
+COPY src/cognitive_orchestrator/skills/               src/cognitive_orchestrator/skills/
+COPY src/cognitive_orchestrator/__init__.py           src/cognitive_orchestrator/__init__.py
+ENV PYTHONPATH=/app/src
+EXPOSE 8080
+CMD ["uvicorn", "cognitive_orchestrator.skills.service:app", "--host", "0.0.0.0", "--port", "8080"]

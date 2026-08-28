@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+.venv.old/
+venv/
+env/
+
+# Environment / secrets
+.env
+
+# Logs (including SLURM job logs)
+logs/
+*.log
+vllm-server-*.log
+validate-*.log
+
+# Model weights and large binaries
+hf_cache/
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+*.pth
+
+# Misc
+.DS_Store
+
