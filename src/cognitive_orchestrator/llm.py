@@ -11,6 +11,7 @@ cognitive loop (and the test suite) run with zero GPU.
 from __future__ import annotations
 
 import json
+import os
 import re
 from typing import Optional
 
@@ -114,6 +115,43 @@ def _mock_response(system: str, user: str, image_b64: Optional[str]) -> str:
     m = re.match(r"\s*ROLE:\s*(\w+)", system)
     if m:
         role = m.group(1)
+
+    if os.getenv("CO_TASK", "") == "omnisim_single":
+        if role == "perception":
+            # Color must line up with the plan's destination bin: perception/vlm.py
+            # always injects the fixed bin->color map {left_bin: red, right_bin: blue,
+            # safe_zone: fragile}, and the plan below places "block" in "left_bin"
+            # (the OmniSim-verified reachable coordinate), so the mock color here
+            # must be "red" -- not "blue" -- or the verifier would expect right_bin.
+            return json.dumps({
+                "objects": [
+                    {"id": "block", "label": "block", "color": "red",
+                     "fragile": False, "position": {"x": 0.2, "y": 0.1, "z": 0.0}},
+                ],
+            })
+
+        if role == "planner":
+            return json.dumps({
+                "goal": user[:120],
+                "steps": [
+                    {"index": 0, "skill": "pick", "args": {"object_id": "block"},
+                     "rationale": "Pick the block."},
+                    {"index": 1, "skill": "place", "args": {"object_id": "block", "location": "left_bin"},
+                     "rationale": "Place the block in left_bin."},
+                ],
+            })
+
+        if role == "supervisor":
+            # Same clarify-vs-execute routing as the default supervisor branch below.
+            # if "?" in user and len(user) < 15:
+                # return json.dumps({"action": "clarify",
+                                #    "message": "Which objects should I focus on?"})
+            lowered = user.lower()
+            has_task = any(w in lowered for w in ("pick", "place", "put", "move", "sort", "block", "bin"))
+            if not has_task:
+                return json.dumps({"action": "clarify", "message": "Could you tell me which object and where to place it?"})
+
+            return json.dumps({"action": "execute", "message": "Understood. Planning now."})
 
     if role == "perception":
         return json.dumps({

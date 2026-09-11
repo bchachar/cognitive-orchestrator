@@ -8,15 +8,20 @@ servers on the A40 node to run it for real.
 """
 from __future__ import annotations
 
+import os
 import sys
 
 from .config import settings
 from .orchestration.graph import build_graph
 from .perception.simulator import render_synthetic, to_b64
 from .skills.client import HTTPSkillClient, LocalSkillClient
+from .skills.omnisim_client import OmniSimSkillClient
 
 
 def make_skill_client():
+    if os.getenv("CO_USE_OMNISIM", "").lower() == "true":
+        return OmniSimSkillClient()
+
     # Use the HTTP edge service if it is configured & reachable; else in-process.
     if settings.skill_service_url and not settings.mock_models:
         try:
@@ -29,9 +34,19 @@ def make_skill_client():
 
 
 def run(command: str) -> dict:
-    png, seed = render_synthetic()
+    use_omnisim = os.getenv("CO_USE_OMNISIM", "").lower() == "true"
+    if use_omnisim:
+        seed = {
+            "locations": {"block": "right_bin"},
+            "fragile": {"block": False},
+        }
+        image_b64 = ""
+    else:
+        png, seed = render_synthetic()
+        image_b64 = to_b64(png)
+
     graph = build_graph(make_skill_client())
-    init = {"user_message": command, "image_b64": to_b64(png), "seed": seed,
+    init = {"user_message": command, "image_b64": image_b64, "seed": seed,
             "results": [], "transcript": [], "replans": 0}
     return graph.invoke(init)
 

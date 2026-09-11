@@ -5,7 +5,7 @@
         ▼
     perceive (VLM) ──▶ plan ──▶ execute (skills) ──▶ verify
                          ▲                              │
-                         └────────── replan ◀───────────┘  (bounded)
+                         └────────── replan ◀──────────┘  (bounded)
                                                         │success / budget spent
                                                         ▼
                                                        END
