@@ -27,7 +27,7 @@ from typing import Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from ..agents import planner, supervisor, triage, verifier
+from ..agents import planner, preflight, supervisor, triage, verifier
 from ..config import settings
 from ..perception import vlm
 from ..schemas import Failure, FailureKind, Plan, Scene, SkillName
@@ -94,6 +94,12 @@ def build_graph(skill: SkillClient):
             if bad:
                 raise ValueError(f"Plan steps {bad} use skills missing from the manifest "
                                  f"{sorted(manifest)}")
+            seed = state["seed"]
+            violations = preflight.validate_plan(
+                p, {"locations": seed["locations"], "fragile": seed.get("fragile", {}),
+                    "held": None})
+            if violations:
+                raise ValueError("; ".join(violations))
         except ValueError as e:
             return {**update, "plan": None,
                     "plan_error": f"Plan rejected: {e}",

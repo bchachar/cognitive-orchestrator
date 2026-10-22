@@ -32,12 +32,35 @@ _REGISTRY: dict[SkillName, SkillFn] = {}
 _MANIFEST: dict[SkillName, str] = {}
 
 
-def skill(name: SkillName, doc: str):
+@dataclass(frozen=True)
+class SkillSpec:
+    """Declarative contract over world-state keys; read by agents.preflight.
+
+    preconditions: {state_key: {op: operand}} with ops "is" (identity, e.g. None),
+        "eq", and "contains" (key membership for dict-valued state). Operands
+        starting with "$" resolve to the step arg of that name.
+    effects: {state_key: value} assigns the key; for dict-valued state
+        {state_key: {k: v}} merges entries. "$name" values resolve like above.
+    """
+    preconditions: dict = field(default_factory=dict)
+    effects: dict = field(default_factory=dict)
+
+
+_SPECS: dict[SkillName, SkillSpec] = {}
+
+
+def skill(name: SkillName, doc: str, preconditions: dict | None = None,
+          effects: dict | None = None):
     def deco(fn: SkillFn) -> SkillFn:
         _REGISTRY[name] = fn
         _MANIFEST[name] = doc
+        _SPECS[name] = SkillSpec(preconditions or {}, effects or {})
         return fn
     return deco
+
+
+def spec(name: SkillName) -> SkillSpec | None:
+    return _SPECS.get(name)
 
 
 @skill(SkillName.INSPECT, "inspect(object_id) -> report an object's fragility/attributes")
@@ -48,7 +71,9 @@ def _inspect(world: WorldState, args: dict) -> SkillResult:
                        message=f"{oid} fragile={frag}")
 
 
-@skill(SkillName.PICK, "pick(object_id) -> grasp an object; fails if hands are full")
+@skill(SkillName.PICK, "pick(object_id) -> grasp an object; fails if hands are full",
+       preconditions={"held": {"is": None}, "locations": {"contains": "$object_id"}},
+       effects={"held": "$object_id", "locations": {"$object_id": "gripper"}})
 def _pick(world: WorldState, args: dict) -> SkillResult:
     oid = args.get("object_id", "")
     if world.held is not None:
@@ -62,7 +87,9 @@ def _pick(world: WorldState, args: dict) -> SkillResult:
     return SkillResult(ok=True, skill=SkillName.PICK, args=args, message=f"Holding {oid}")
 
 
-@skill(SkillName.PLACE, "place(object_id, location) -> put held/known object at a location")
+@skill(SkillName.PLACE, "place(object_id, location) -> put held/known object at a location",
+       preconditions={"held": {"eq": "$object_id"}},
+       effects={"held": None, "locations": {"$object_id": "$location"}})
 def _place(world: WorldState, args: dict) -> SkillResult:
     oid = args.get("object_id", "")
     loc = args.get("location", "")

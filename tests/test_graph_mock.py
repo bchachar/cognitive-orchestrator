@@ -15,7 +15,7 @@ def test_end_to_end_executes_and_verifies():
     assert locs["red_cube_1"] == "left_bin"
     assert locs["blue_cube_1"] == "right_bin"
     assert locs["glass_1"] == "safe_zone"
-    assert len(out["results"]) == 6
+    assert len(out["results"]) == 7
 
 def test_clarify_short_circuits():
     out = _run("?")
