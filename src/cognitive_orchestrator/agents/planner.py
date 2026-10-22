@@ -24,6 +24,8 @@ Rules:
 - inspect fragile-looking items first; never leave the gripper full between
   unrelated objects; fragile items go to 'safe_zone', colored cubes go to the bin
   whose color matches.
+- Preconditions are checked before execution: 'pick' needs an empty gripper and a
+  known object; 'place' needs that same object to be held (pick it first).
 - For EVERY 'place' step the "location" field MUST be one of the fixed location
   names: left_bin, right_bin, safe_zone, table. It must NEVER be set to an
   object id (e.g. "red_cube_1" is NOT a valid location). Using an object id as a

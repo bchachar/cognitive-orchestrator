@@ -86,10 +86,10 @@ def test_execution_failure_retries_step_without_discarding_plan(monkeypatch):
     out = _run(client)
     assert len(plans) == 1                      # plan kept, never regenerated
     assert out["replans"] == 0                  # retry does not spend the replan budget
-    assert out["step_retries"] == {2: 1}
+    assert out["step_retries"] == {3: 1}
     assert client.calls.count((SkillName.PICK, "red_cube_1")) == 2
     assert client.calls.count((SkillName.INSPECT, "glass_1")) == 1  # earlier steps not rerun
-    assert len(out["results"]) == 6 and all(r["ok"] for r in out["results"])
+    assert len(out["results"]) == 7 and all(r["ok"] for r in out["results"])
     assert out["verdict"]["success"] is True
 
 
