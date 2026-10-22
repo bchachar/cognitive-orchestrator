@@ -33,6 +33,7 @@ class Settings(BaseSettings):
 
     # Cognitive-loop safety limits.
     max_replans: int = 2
+    max_step_retries: int = 2  # per failed step, before falling back to a full replan
     request_timeout_s: float = 120.0
 
 

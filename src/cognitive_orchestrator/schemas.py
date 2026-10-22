@@ -69,6 +69,21 @@ class SkillResult(BaseModel):
     message: str = ""
 
 
+class FailureKind(str, Enum):
+    """Why the loop failed; each kind has its own recovery route in the graph."""
+    PERCEPTION = "perception"
+    PLANNING = "planning"
+    EXECUTION = "execution"
+    VERIFICATION = "verification"
+    EXHAUSTED = "exhausted"
+
+
+class Failure(BaseModel):
+    kind: FailureKind
+    reason: str
+    step_index: Optional[int] = None
+
+
 class Verdict(BaseModel):
     """Verifier agent output: did we actually satisfy the goal?"""
     success: bool
