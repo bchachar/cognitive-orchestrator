@@ -18,6 +18,7 @@ from typing import Optional
 from openai import OpenAI
 
 from .config import settings
+from .observability import record_model_call
 
 
 class LLMClient:
@@ -28,6 +29,7 @@ class LLMClient:
 
     def chat(self, system: str, user: str, image_b64: Optional[str] = None) -> str:
         if self.mock:
+            record_model_call(self.model)
             return _mock_response(system, user, image_b64)
 
         content: list | str
@@ -49,6 +51,7 @@ class LLMClient:
             temperature=0.0,
             timeout=settings.request_timeout_s,
         )
+        record_model_call(self.model, getattr(resp, "usage", None))
         return resp.choices[0].message.content or ""
 
     def chat_json(self, system: str, user: str, image_b64: Optional[str] = None) -> dict:

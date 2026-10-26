@@ -12,6 +12,7 @@ import os
 import sys
 
 from .config import settings
+from .observability import Trace, trace_enabled
 from .orchestration.graph import build_graph
 from .perception.simulator import render_synthetic, to_b64
 from .skills.client import HTTPSkillClient, LocalSkillClient
@@ -48,7 +49,16 @@ def run(command: str) -> dict:
     graph = build_graph(make_skill_client())
     init = {"user_message": command, "image_b64": image_b64, "seed": seed,
             "results": [], "transcript": [], "replans": 0}
-    return graph.invoke(init)
+    trace = Trace(command) if trace_enabled() else None
+    if trace is not None:
+        init["trace"] = trace
+    try:
+        final = graph.invoke(init)
+    finally:
+        if trace is not None:
+            print(f"trace written to {trace.write()}", file=sys.stderr)
+    final.pop("trace", None)
+    return final
 
 
 def main() -> None:

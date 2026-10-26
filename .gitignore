@@ -33,3 +33,6 @@ hf_cache/
 # Misc
 .DS_Store
 
+
+# Run traces (CO_TRACE=true)
+traces/

@@ -23,12 +23,13 @@ expressed as an explicit, inspectable graph rather than a prompt-chain black box
 """
 from __future__ import annotations
 
-from typing import Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
 
 from ..agents import planner, preflight, supervisor, triage, verifier
 from ..config import settings
+from ..observability import traced
 from ..perception import vlm
 from ..schemas import Failure, FailureKind, Plan, Scene, SkillName
 from ..skills.client import SkillClient
@@ -54,6 +55,7 @@ class LoopState(TypedDict, total=False):
     escalation: str
     action: str
     transcript: list[str]
+    trace: Any                 # observability.Trace when CO_TRACE=true
 
 
 def build_graph(skill: SkillClient):
@@ -181,13 +183,13 @@ def build_graph(skill: SkillClient):
         return "clarify" if state.get("action") == "clarify" else "execute"
 
     g = StateGraph(LoopState)
-    g.add_node("supervisor", supervisor_node)
-    g.add_node("perceive", perceive_node)
-    g.add_node("plan", plan_node)
-    g.add_node("execute", execute_node)
-    g.add_node("verify", verify_node)
-    g.add_node("triage", triage_node)
-    g.add_node("escalate", escalate_node)
+    g.add_node("supervisor", traced("supervisor", supervisor_node))
+    g.add_node("perceive", traced("perceive", perceive_node))
+    g.add_node("plan", traced("plan", plan_node))
+    g.add_node("execute", traced("execute", execute_node))
+    g.add_node("verify", traced("verify", verify_node))
+    g.add_node("triage", traced("triage", triage_node))
+    g.add_node("escalate", traced("escalate", escalate_node))
 
     g.set_entry_point("supervisor")
     g.add_conditional_edges("supervisor", after_supervisor,
